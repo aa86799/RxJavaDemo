@@ -1,0 +1,109 @@
+ RxJava 好在哪？就好在简洁，好在 把什么复杂逻辑都能穿成一条线的 简洁。链式调用
+
+compile 'io.reactivex:rxjava:1.2.2'
+compile 'io.reactivex:rxandroid:1.2.1'
+
+public interface Observer<T> {//最简单的观察者接口  在订阅过程中，会被包装成一个ObserverSubscriber(即Subscriber的子类)再使用
+    void onCompleted();         //不再有onNext事件，触发
+    void onError(Throwable e);  //错误时
+    void onNext(T t); //相当于普通的观察者中的 事件: event
+}
+
+
+public interface Subscription {
+    void unsubscribe();         //取消订阅
+    boolean isUnsubscribed();   //是否取消订阅
+}
+
+public abstract class Subscriber<T> implements Observer<T>, Subscription
+    内部重写了Subscription接口的方法，实现交由 内部的SubscriptionList
+    也是一个Observer
+    onStart(): 在事件还未发送之前调用，且只在subscribe所发生的线程中被调用
+    unsubscribe(): 取消订阅，取消后就不再接收事件。
+                   一般在这个方法调用前，可以使用 isUnsubscribed() 先判断一下状态
+         这个方法很重要，因为在 subscribe() 之后， Observable 会持有 Subscriber 的引用，
+         这个引用如果不能及时被释放，将有内存泄露的风险。所以最好保持一个原则：
+         要在不再使用的时候尽快在合适的地方（例如 onPause() onStop() 等方法中）
+         调用 unsubscribe() 来解除引用关系，以避免内存泄露的发生。
+
+public final class ObserverSubscriber<T> extends Subscriber<T> {//Observer、Subscriber的适配器，继承abstract class Subscriber
+    final Observer<? super T> observer;
+
+    public ObserverSubscriber(Observer<? super T> observer) {
+        this.observer = observer;
+    }
+    onCompleted、onError、onNext
+}
+
+public class Observable<T>
+    Observable 即被观察者，它决定什么时候触发事件以及触发怎样的事件
+    create() 传入OnSubscribe， 创建一个 Observable
+    Subscription subscribe()
+        >传入Observer(会适配成Subscriber) 或 Subscriber
+            Subscriber.onStart()
+            根据OnSubscribe.call()内定义的事件，执行Subscriber的一系列方法, 再执行到OnSubscribe父接口Observer的一系列方法
+            返回值，Subscription 方便用于Subscription.unsubscribe()
+        >支持不完整定义的回调，会自动根据定义创建出 Subscriber， 即不需要传Observer或Subscriber
+            可以传入参数 (Action1, Action1, Action0) 分别可表示onNext, onError, onComplete
+
+    just() 最多传10个数据，用于onNext()事件处理
+    from() 传入数组(与just方法类似)、Iterable、Future
+    subscribeOn 在哪个线程产生事件，Observable.OnSubscribe 被激活时所处的线程
+    observeOn   在哪个线程消费事件，即Subscriber 事件所运行在的线程
+    map     事件对象的直接变换，可从传入类型，变换后，返回另一个类型
+    flatMap 返回一个Observable 原理是这样的：
+        1. 使用传入的事件对象创建一个 Observable 对象；
+        2. 并不发送这个 Observable, 而是将它激活，于是它开始发送事件；
+        3. 每一个创建出来的 Observable 发送的事件，都被汇入同一个 Observable ，
+            而这个Observable负责将这些事件统一交给 Subscriber 的回调方法。这三个步骤，
+            把事件拆成了两级，通过一组新创建的 Observable 将初始的对象『铺平』之后通过统一路径分发了下去。
+            而这个『铺平』就是 flatMap() 所谓的 flat。
+       flatMap也常用于嵌套的异步操作，例如嵌套的网络请求
+       可链式多次调用
+   lift     变换；flatMap中会用到，传入Operator
+                interface Operator<R, T> extends Func1<Subscriber<? super R>, Subscriber<? super T>>
+            被适配成OnSubscribeLift
+                public OnSubscribeLift(OnSubscribe<T> parent, Operator<? extends R, ? super T> operator)
+            再传入create()，以创建Observable
+            可链式多次调用
+            不建议直接使用lift建造变换
+    compose
+
+        可链式多次调用
+
+
+public interface Action1<T> extends Action {
+    void call(T t);
+}
+
+public interface OnSubscribe<T> extends Action1<Subscriber<? super T>>
+
+public interface Action0 extends Action {//无泛型定义，所以用于onComplete
+    void call();
+}
+
+public interface Action2<T1, T2> extends Action {
+    void call(T1 t1, T2 t2);
+}
+    Action2、Action3...Action9，
+
+
+在不指定线程的情况下， RxJava 遵循的是线程不变的原则，
+    即：在哪个线程调用 subscribe()，就在哪个线程生产事件；在哪个线程生产事件，就在哪个线程消费事件。
+    如果需要切换线程，就需要用到 Scheduler （调度器）
+
+Schedulers.immediate(): 直接在当前线程运行  默认
+Schedulers.newThread(): 总是启用新线程，并在新线程执行操作
+Schedulers.io(): I/O (读写文件、读写数据库、网络信息交互等）操作所使用的，
+    行为模式与newThread()差不多，内部实现是是用一个无数量上限的线程池，可以重用空闲的线程
+Schedulers.computation(): 这个计算指的是 CPU 密集型计算，即不会被 I/O 等操作限制性能的操作，例如图形的计算。
+    这个Scheduler使用的固定的线程池，大小为 CPU 核数。不要把I/O操作放在computation()中，否则I/O操作的等待时间会浪费CPU。
+例：
+Observable.just(1, 2, 3, 4)
+    .subscribeOn(Schedulers.io())
+    .observeOn(AndroidSchedulers.mainThread())
+
+public interface Func1<T, R> extends Function {
+    R call(T t); //有返回值
+}
+    与Action类似. Func1、Func2...Func9
