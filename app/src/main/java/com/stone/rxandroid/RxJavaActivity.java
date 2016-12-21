@@ -5,23 +5,24 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 
-import com.stone.rxandroid.rxjava.TestObservable;
+import com.stone.rxandroid.rxjava.MyObservable;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Scheduler;
 import rx.Subscriber;
 import rx.schedulers.Schedulers;
 
 /**
  * desc   :
+ * author : stone
+ * email  : aa86799@163.com
  */
 
 public class RxJavaActivity extends Activity {
 
     private String tag = this.getClass().getSimpleName();
 
-    TestObservable test;
+    MyObservable test;
 
     Observer<String> mObserver1 = new Observer<String>() {
 
@@ -69,7 +70,7 @@ public class RxJavaActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        test = new TestObservable();
+        test = new MyObservable();
 
 //        Observable observable1 = test.testNormal();
 //        Observable observable1 = test.testJust();
@@ -92,5 +93,7 @@ public class RxJavaActivity extends Activity {
         test.testLift();
 
         test.testCompose();
+
+        test.testScheduleMethod();
     }
 }
