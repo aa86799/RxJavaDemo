@@ -60,6 +60,10 @@ public class Observable<T>
             而这个『铺平』就是 flatMap() 所谓的 flat。
        flatMap也常用于嵌套的异步操作，例如嵌套的网络请求
        可链式多次调用
+   switchMap 将 Observable<T> 变换成 Observable<R>
+   filter
+   take     保留事件
+   debounce 去抖动：事件发生的间隔太近，指定该值对应的时间后，该时段里的事件将被丢弃
    lift     变换；flatMap中会用到，传入Operator
                 interface Operator<R, T> extends Func1<Subscriber<? super R>, Subscriber<? super T>>
             被适配成OnSubscribeLift
@@ -68,8 +72,20 @@ public class Observable<T>
             可链式多次调用
             不建议直接使用lift建造变换
     compose
-
+        compose 是唯一一个能够从数据流中得到原始Observable的操作符，所以，那些需要对整个数据流产生作用的操作
+                （比如，subscribeOn()和observeOn()）需要使用 compose 来实现。相较而言，
+                如果在flatMap()中使用subscribeOn()或者observeOn()，那么它仅仅对在 flatMap
+                中创建的Observable起作用，而不会对剩下的流产生影响。
+                这样就可以简化subscribeOn()以及observeOn()的调用次数了。
+        compose 是对 Observable 整体的变换，换句话说， flatMap 转换Observable里的每一个事件，而 compose 转换的是整个Observable数据流。
+        flatMap 每发送一个事件都创建一个 Observable，所以效率较低。而 compose 操作符只在主干数据流上执行操作。
         可链式多次调用
+    merge   用于合并两个Observable为一个Observable
+    concat  顺序执行多个Observable
+    first   与concat合用，若第一个能顺利执行，则不再执行之后的
+    timer   延时操作
+    throttleFirst   与debounce类似，也是时间间隔太短，就丢弃事件。可以用于防抖操作，比如防止双击
+
 
 
 public interface Action1<T> extends Action {
@@ -107,3 +123,6 @@ public interface Func1<T, R> extends Function {
     R call(T t); //有返回值
 }
     与Action类似. Func1、Func2...Func9
+
+public abstract class Subject<T, R> extends Observable<R> implements Observer<T>
+    Subject 是Observable也是Observer

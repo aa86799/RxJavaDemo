@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import rx.Observable;
+import rx.Single;
+import rx.SingleSubscriber;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -23,11 +25,17 @@ import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+import rx.subjects.PublishSubject;
+import rx.subjects.Subject;
 
 import static rx.schedulers.Schedulers.io;
 
 /**
- * desc   :
+ * desc   : Observable 的一些操作
+ * 参考：
+ *      给 Android 开发者的 RxJava 详解 ---- http://gank.io/post/560e15be2dca930e00da1083
+ *      RxJava 从入门到出轨 ---- http://blog.csdn.net/yyh352091626/article/details/53304728
+ *
  * author : stone
  * email  : aa86799@163.com
  */
@@ -222,7 +230,7 @@ public class MyObservable {
                 });
         /*
         如上需要使用for，若不想用，且想要Subscriber中传入的是Course对象
-        flatMap 使用在遍历集合、数组上较方便
+        flatMap 适用将 T 变换为 Observable<R>
          */
         Observable.from(users)
                 .flatMap(new Func1<Student, Observable<Student.Course>>() {
@@ -249,6 +257,72 @@ public class MyObservable {
         /*
         switchMap 适用将 Observable<T> 变换成 Observable<R>
          */
+    }
+
+    public void testFilter() {
+        Observable.from(new Integer[]{1, 2, 3, 4, 5})
+                .filter(new Func1<Integer, Boolean>() {
+                    @Override
+                    public Boolean call(Integer number) {
+                        // 偶数返回true，则表示剔除奇数，留下偶数
+                        return number % 2 == 0;
+                    }
+                })
+                .subscribe(new Action1<Integer>() {
+                    @Override
+                    public void call(Integer number) {
+                        Log.i(tag, "filter - number:" + number);
+                    }
+                });
+        /*
+        public final Observable<T> filter(Func1<? super T, Boolean> predicate)
+        过滤： 满足Func1#call 返回值=true
+         */
+    }
+
+    public void testFirst() {
+        /*
+        只发送符合条件的第一个事件。可以与前面的contact操作符，做网络缓存。
+        举个栗子：依次检查Disk与Network，如果Disk存在缓存，则不做网络请求，否则进行网络请求。
+         */
+
+        // 从缓存获取
+/*        Observable<BookList> fromDisk = Observable.create(new Observable.OnSubscribe<BookList>() {
+            @Override
+            public void call(Subscriber<? super BookList> subscriber) {
+                BookList list = getFromDisk();
+                if (list != null) {
+                    subscriber.onNext(list);
+                } else {
+                    subscriber.onCompleted();
+                }
+            }
+        });
+
+// 从网络获取
+        Observable<BookList> fromNetWork = bookApi.getBookDetailDisscussionList();
+
+        Observable.concat(fromDisk, fromNetWork)
+                // 如果缓存不为null，则不再进行网络请求。反之
+                .first()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<BookList>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(BookList discussionList) {
+
+                    }
+                });*/
     }
 
     public void testLift() {
@@ -377,6 +451,13 @@ public class MyObservable {
         Observable的doOnNext、doOnError、doComplete 与 Observer的 onNext、onError、onComplete 一一对应
         在同线程时，do操作在之后执行；在异线程时，do操作可能在之前执行
          */
+
+        Observable.create(subscriber -> {
+                Student person = new Student();
+                person.setAge(201);
+                subscriber.onNext(person);
+            }
+        );
     }
 
     public void testScheduleMethod() {
@@ -390,6 +471,54 @@ public class MyObservable {
             }
         });
         s.unsubscribe();
+    }
+
+    public void testPublishSubject() {
+        Subject subject = PublishSubject.create();
+
+// 1.由于Subject是Observable，所以进行订阅
+        subject.subscribe(new Subscriber<Object>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(Object o) {
+                Log.i(tag, o.toString());
+            }
+        });
+
+// 2.由于Subject同时也是Observer，所以可以调用onNext发送数据
+        subject.onNext("world");
+    }
+
+    public void testSingle() {
+        /*
+        Single与Observable类似，相当于是他的精简版。
+        订阅者回调的不是OnNext/OnError/onCompleted，而是回调OnSuccess/OnError。
+         */
+        Single.create(new Single.OnSubscribe<Object>() {
+            @Override
+            public void call(SingleSubscriber<? super Object> subscriber) {
+                subscriber.onSuccess("Hello");
+            }
+        }).subscribe(new SingleSubscriber<Object>() {
+            @Override
+            public void onSuccess(Object value) {
+                Log.i(tag, value.toString());
+            }
+
+            @Override
+            public void onError(Throwable error) {
+
+            }
+        });
     }
 
     /*

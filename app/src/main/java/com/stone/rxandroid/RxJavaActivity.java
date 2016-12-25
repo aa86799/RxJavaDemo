@@ -90,6 +90,8 @@ public class RxJavaActivity extends Activity {
 
         test.testFlatMap();
 
+        test.testFilter();
+
         test.testLift();
 
         test.testCompose();
