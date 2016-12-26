@@ -1,0 +1,119 @@
+compile 'io.reactivex.rxjava2:rxjava:2.0.3'
+compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
+//compile 'org.reactivestreams:reactive-streams:1.0.0.final'
+
+可以在 Publisher 中查询数据库或者从网络上获取数据，然后在 Subscriber 中显示。
+Publisher 不只有一种，事实上 Flowable 和 Processor 所有的子类都属于 Publisher。
+在数据发射途中，你可以利用操作符对数据进行变换。
+
+public interface Publisher<T>
+public abstract class Flowable<T> implements Publisher<T>
+
+public interface Subscriber<T>
+
+public interface Consumer<T>
+
+public interface FlowableOnSubscribe<T> {
+    void subscribe(FlowableEmitter<T> var1) throws Exception;
+}
+
+public interface Emitter<T> {//发射器
+    void onNext(T value);
+    void onError(Throwable error);
+    void onComplete();
+}
+
+public interface FlowableEmitter<T> extends Emitter<T> {
+    void setDisposable(Disposable s);
+    void setCancellable(Cancellable c);
+    long requested(); //线程安全的，返回未完成的request数量
+    boolean isCancelled(); //线程安全
+    FlowableEmitter<T> serialize(); //确保调用onNext,onError和onComplete正确序列化。 返回已序列化的FlowableEmitter
+}
+
+public interface Disposable {
+    void dispose(); //处理资源
+    boolean isDisposed(); //是否处理过
+}
+
+public interface Cancellable {
+    void cancel() throws Exception;
+}
+
+public enum BackpressureStrategy {//背压策略
+    /**
+     * OnNext events are written without any buffering or dropping.
+     * Downstream has to deal with any overflow.
+     * <p>Useful when one applies one of the custom-parameter onBackpressureXXX operators.
+     */
+    MISSING,
+    /**
+     * Signals a MissingBackpressureException in case the downstream can't keep up.
+     */
+    ERROR,
+    /**
+     * Buffers <em>all</em> onNext values until the downstream consumes it.
+     */
+    BUFFER,
+    /**
+     * Drops the most recent onNext value if the downstream can't keep up.
+     */
+    DROP,
+    /**
+     * Keeps only the latest onNext value, overwriting any previous value if the
+     * downstream can't keep up.
+     */
+    LATEST
+}
+
+如何形象地描述RxJava中的背压和流控机制 (这里描述的是v1.2的)
+    ----- http://zhangtielei.com/posts/blog-rxjava-backpressure.html
+在RxJava中，可以通过对Observable(v1.2)、Publisher(v2.0)连续调用多个Operator组成一个调用链，
+其中数据从上游向下游传递。当上游发送数据的速度大于下游处理数据的速度时，就需要进行Flow Control了。
+
+这就像小学做的那道数学题：一个水池，有一个进水管和一个出水管。如果进水管水流更大，过一段时间水池就会满（溢出）。这就是没有Flow Control导致的结果。
+Flow Control有哪些思路呢？大概是有四种:
+(1) 背压（Backpressure）。
+(2) 节流（Throttling）。
+(3) 打包处理。
+(4) 调用栈阻塞（Callstack blocking）。
+
+背压（Backpressure）
+Backpressure，也称为Reactive Pull，就是下游需要多少（具体是通过下游的request请求指定需要多少），上游就发送多少。
+这种方案只对于所谓的cold Observable有效。cold Observable指的是那些允许降低速率的发送源，比如两台机器传一个文件，
+速率可大可小，即使降低到每秒几个字节，只要时间足够长，还是能够完成的。相反的例子是音视频直播，
+数据速率低于某个值整个功能就没法用了（这种就属于hot Observable了）。
+
+节流（Throttling）
+说白了就是丢弃。消费不过来，就处理其中一部分，剩下的丢弃。还是举音视频直播的例子，在下游处理不过来的时候，就需要丢弃数据包。
+而至于处理哪些和丢弃哪些数据，就有不同的策略。主要有三种策略：
+sample (也叫throttleLast)     选取一定时间内最后一条数据
+throttleFirst                    选取一定时间内第一条数据
+debounce (也叫throttleWithTimeout)    debounce可以用它来找到那些连续的收发事件之后的idle time超时事件
+
+打包处理
+打包就是把上游来的小包裹打成大包裹，分发到下游。这样下游需要处理的包裹的个数就减少了。RxJava中提供了两类这样的机制：buffer和window。
+buffer和window的功能基本一样，只是输出格式不太一样：buffer打包后的包裹用一个List表示，而window打包后的包裹又是一个Observable。
+
+调用栈阻塞（Callstack blocking）
+只适用于整个调用链都在一个线程上同步执行的情况
+
+如何让Observable支持Backpressure？
+在RxJava 1.x中，有些Observable是支持Backpressure的，而有些不支持。但不支持Backpressure的Observable
+可以通过一些operator来转化成支持Backpressure的Observable。这些operator包括：
+    onBackpressureBuffer
+    onBackpressureDrop
+    onBackpressureLatest
+    onBackpressureBlock（已过期）
+    它们转化成的Observable分别具有不同的Backpressure策略。
+而在RxJava 2.x中，Observable不再支持Backpressure，而是改用Flowable来专门支持Backpressure。
+上面提到的四种operator的前三种分别对应Flowable的三种Backpressure策略：
+    BackpressureStrategy.BUFFER
+    BackpressureStrategy.DROP
+    BackpressureStrategy.LATEST
+onBackpressureBuffer是不丢弃数据的处理方式。把上游收到的全部缓存下来，等下游来请求再发给下游。相当于一个水库。
+         但上游太快，水库（buffer）就会溢出。
+onBackpressureDrop和onBackpressureLatest比较类似，都会丢弃数据。这两种策略相当于一种令牌机制（或者配额机制），
+    下游通过request请求产生令牌（配额）给上游，上游接到多少令牌，就给下游发送多少数据。当令牌数消耗到0的时候，上游开始丢弃数据。
+    但这两种策略在令牌数为0的时候有一点微妙的区别：onBackpressureDrop直接丢弃数据，不缓存任何数据；
+    而onBackpressureLatest则缓存最新的一条数据，这样当上游接到新令牌的时候，它就先把缓存的上一条“最新”数据发送给下游
