@@ -109,6 +109,23 @@ public class MyObservable {
     };
 
     public void testSubscribe(Observable observable) {
+        observable.subscribe(new Subscriber() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(Object o) {
+
+            }
+        });
+
         // 自动创建 Subscriber ，并使用 onNextAction 来定义 onNext()
         observable.subscribe(onNextAction);
 // 自动创建 Subscriber ，并使用 onNextAction 和 onErrorAction 来定义 onNext() 和 onError()
@@ -529,4 +546,47 @@ public class MyObservable {
         而让你不再需要使用 Otto 或者 GreenRobot 的 EventBus
         https://github.com/AndroidKnife/RxBus
      */
+
+    public void test() {
+        /*
+        静态方法一般用于创建Observable对象；成员方法用于链式变换，返回变换后的Observable
+         */
+//        Observable.create(new Observable.OnSubscribe<String>() {
+//            @Override
+//            public void call(Subscriber<? super String> subscriber) {
+////                subscriber.onNext();
+//            }
+//        });
+//        Observable.just()
+//        Observable.from()
+
+        Observable.create(new Observable.OnSubscribe<Object>() {
+            @Override
+            public void call(Subscriber<? super Object> subscriber) {
+                /*
+
+                 */
+                subscriber.onNext("哈");
+                subscriber.onCompleted();
+            }
+        })
+
+                .subscribe(new Subscriber<Object>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(Object o) {
+                System.out.println("aaaaa" + o.toString());
+            }
+        });
+
+    }
 }

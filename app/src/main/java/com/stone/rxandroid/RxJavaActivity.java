@@ -71,10 +71,11 @@ public class RxJavaActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         test = new MyObservable();
+        test.test();
 
-//        Observable observable1 = test.testNormal();
-//        Observable observable1 = test.testJust();
-        Observable observable1 = test.testFrom();
+        Observable observable1 = test.testNormal();
+        Observable observable2 = test.testJust();
+        Observable observable3 = test.testFrom();
         test.testSubscribe(observable1);
         observable1.subscribeOn(Schedulers.immediate());
 //        Subscription subscription = observable1.subscribe(mObserver1);//订阅并执行call

@@ -36,6 +36,7 @@ public final class ObserverSubscriber<T> extends Subscriber<T> {//Observer、Sub
 }
 
 public class Observable<T>
+    (静态方法一般用于创建Observable对象；成员方法用于链式变换，返回变换后的Observable)
     Observable 即被观察者，它决定什么时候触发事件以及触发怎样的事件
     create() 传入OnSubscribe， 创建一个 Observable
     Subscription subscribe()
