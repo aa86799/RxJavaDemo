@@ -13,7 +13,16 @@ android {
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
+        jackOptions {//java8
+            enabled true
+        }
     }
+
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -29,8 +38,8 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:25.1.0'
     testCompile 'junit:junit:4.12'
-    compile 'io.reactivex.rxjava2:rxjava:2.0.3'
-    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
+//    compile 'io.reactivex.rxjava2:rxjava:2.0.3'
+    compile 'io.reactivex.rxjava2:rxandroid:+'
     /*
     reactive streams(反应流)主动提供一个异步非阻塞背压流处理的标准
     在依赖了上面两个库后，发现 反应流这个不用再 单独引入

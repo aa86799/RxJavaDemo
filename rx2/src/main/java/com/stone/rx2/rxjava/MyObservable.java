@@ -80,6 +80,7 @@ public class MyObservable {
             @Override
             public void subscribe(FlowableEmitter<String> e) throws Exception {
                 e.onNext("hello RxJava 2");
+                e.onNext("hello RxJava 2 ..");
                 e.onComplete();
             }
         }, BackpressureStrategy.BUFFER);
@@ -500,13 +501,20 @@ public class MyObservable {
 
        /*
         线程控制：Scheduler
-            默认不指定 subscribeOn 和 subscribeOn  在当前线程中执行
-            subscribeOn 和 subscribeOn 都是指定事件的运行线程
+            默认不指定 subscribeOn 和 observeOn  在当前线程中执行
+            subscribeOn 和 observeOn 都是指定事件的运行线程
             subscribeOn 影响范围：到首个 observeOn 之前的所有事件 包括doMethod、变换事件等
            observeOn 影响它之后的所有事件
 
          */
         Flowable.just(1)
+                .map(new Function<Integer, Integer>() {
+                    @Override
+                    public Integer apply(Integer integer) throws Exception {
+                        System.out.println(Thread.currentThread().getName() + "..map0");
+                        return integer + 10;
+                    }
+                })
                 .doOnSubscribe(new Consumer<Subscription>() {
                     @Override
                     public void accept(Subscription subscription) throws Exception {
