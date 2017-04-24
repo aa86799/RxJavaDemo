@@ -107,14 +107,15 @@ public class RxJavaActivity extends Activity {
         Observable<String> observable = RxBus.getInstance().register(String.class);
         observable.map(s -> {
             try {
-                System.out.println("map变换成功" + s);
-                return Integer.valueOf(s);
+                int v = Integer.valueOf(s);
+                System.out.println("map变换成功, source = " + s);
+                return v;
             } catch (Exception e) {
-                System.out.println("map变换失败" + s);
+                System.out.println("map变换失败, source = " + s);
                 return s;
             }
         }).subscribe(value -> {
-            System.out.println("订阅" + value);
+            System.out.println("订阅 " + value);
         });
 
         RxBus.getInstance().post("888");
