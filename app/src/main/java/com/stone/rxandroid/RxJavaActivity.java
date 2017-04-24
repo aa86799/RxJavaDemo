@@ -5,7 +5,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 
+import com.stone.rxandroid.rxbus.RxBus;
 import com.stone.rxandroid.rxjava.MyObservable;
+
 
 import rx.Observable;
 import rx.Observer;
@@ -98,5 +100,25 @@ public class RxJavaActivity extends Activity {
         test.testCompose();
 
         test.testScheduleMethod();
+
+        /*
+        rxbus
+         */
+        Observable<String> observable = RxBus.getInstance().register(String.class);
+        observable.map(s -> {
+            try {
+                System.out.println("map变换成功" + s);
+                return Integer.valueOf(s);
+            } catch (Exception e) {
+                System.out.println("map变换失败" + s);
+                return s;
+            }
+        }).subscribe(value -> {
+            System.out.println("订阅" + value);
+        });
+
+        RxBus.getInstance().post("888");
+        RxBus.getInstance().post("发发发");
+        RxBus.getInstance().unregister(String.class, observable);
     }
 }
