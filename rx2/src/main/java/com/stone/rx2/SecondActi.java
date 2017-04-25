@@ -36,6 +36,6 @@ public class SecondActi extends Activity {
 
 
 
-//        RxBus.getInstance().unregister();
+//        RxBus.getInstance().unregisterAll();
     }
 }

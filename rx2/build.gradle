@@ -38,7 +38,7 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:25.1.0'
     testCompile 'junit:junit:4.12'
-//    compile 'io.reactivex.rxjava2:rxjava:2.0.3'
+    compile 'io.reactivex.rxjava2:rxjava:+'
     compile 'io.reactivex.rxjava2:rxandroid:+'
     /*
     reactive streams(反应流)主动提供一个异步非阻塞背压流处理的标准
