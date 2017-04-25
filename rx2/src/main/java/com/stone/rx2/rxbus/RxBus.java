@@ -2,11 +2,6 @@ package com.stone.rx2.rxbus;
 
 import android.support.annotation.NonNull;
 
-import org.reactivestreams.Publisher;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.reactivex.Flowable;
 import io.reactivex.processors.FlowableProcessor;
@@ -37,7 +32,7 @@ public class RxBus {
         return Holder.instance;
     }
 
-    public void post(Object obj) {
+    public void post(@NonNull Object obj) {
         mBus.onNext(obj);
     }
 

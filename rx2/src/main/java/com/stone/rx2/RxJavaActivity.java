@@ -1,7 +1,6 @@
 package com.stone.rx2;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -13,15 +12,10 @@ import com.stone.rx2.rxjava.MyObservable;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.io.Serializable;
-
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.FlowableOnSubscribe;
-import io.reactivex.functions.Consumer;
-
-import static android.R.attr.value;
 
 /**
  * desc   :
@@ -152,15 +146,15 @@ public class RxJavaActivity extends Activity {
 //                    }
 //                } //Subscriber和Subscriber ，这样写明对象，它的泛型参数，必须是之前的链式变换时，最终返回的类型
 
-    value -> {//直接使用lambda，对应上面可能返回的两种类型
-            System.out.println("订阅 " + value);
-        })/*.dispose()*/;
+                value -> {//直接使用lambda，对应上面可能返回的两种类型
+                    System.out.println("订阅 " + value);
+                })/*.dispose()*/;
 
         Flowable<Integer> f1 = RxBus.getInstance().register(Integer.class);
         f1.doOnComplete(() -> System.out.println("f1 doOnComplete"))
                 .subscribe(value -> System.out.println("订阅f1消息 .. " + value));
 
-        new Handler().postDelayed(()-> {
+        new Handler().postDelayed(() -> {
             System.out.println("延迟发两种类型消息");
             RxBus.getInstance().post("888");
             RxBus.getInstance().post("发发发");
