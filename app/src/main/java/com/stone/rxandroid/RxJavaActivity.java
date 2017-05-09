@@ -7,6 +7,8 @@ import android.widget.ImageView;
 
 import com.stone.rxandroid.rxbus.RxBus;
 import com.stone.rxandroid.rxjava.MyObservable;
+import com.stone.rxandroid.rxjava.subject.MySubject;
+import com.stone.rxandroid.rxmath.MyMath;
 
 
 import rx.Observable;
@@ -91,6 +93,8 @@ public class RxJavaActivity extends Activity {
 
         test.testMap(this);
 
+        test.testConcatMap();
+
         test.testFlatMap();
 
         test.testFilter();
@@ -100,6 +104,18 @@ public class RxJavaActivity extends Activity {
         test.testCompose();
 
         test.testScheduleMethod();
+
+        test.testDefer();
+
+        test.testGroupBy();
+
+        test.testCast();
+
+        test.testBlockingObservable();
+
+        test.testRetry();
+
+        test.testRetryWhen();
 
         /*
         rxbus
@@ -121,5 +137,31 @@ public class RxJavaActivity extends Activity {
         RxBus.getInstance().post("888");
         RxBus.getInstance().post("发发发");
         RxBus.getInstance().unregister(String.class, observable);
+
+        /*
+        Subject
+         */
+        MySubject testSubject = new MySubject();
+        testSubject.testPublishSubject();
+
+        testSubject.testBehaviorSubject();
+
+        testSubject.testReplaySubject();
+
+        testSubject.testAsyncSubject();
+
+        testSubject.testUnicastSubject();
+
+        testSubject.testSerializedSubject();
+
+        /*
+        Math
+         */
+        MyMath testMath = new MyMath();
+        testMath.testAverage();
+
+        testMath.testMaxAndMin();
+
+        testMath.testSum();
     }
 }
