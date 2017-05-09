@@ -19,8 +19,8 @@ import static org.junit.Assert.assertThat;
 
 /**
  * desc   :  most from http://www.open-open.com/lib/view/1478228724768
- * author : Shi Zongyin
- * email  : shizongyin@znds.com
+ * author : stone
+ * email  : aa86799@163.com
  */
 
 public class RxJavaTest {

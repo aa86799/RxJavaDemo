@@ -64,7 +64,7 @@ public class BackPreActi extends Activity {
                                     最终实现了上游被观察者发送事件的速度的控制，实现了背压的策略。
 
         可以去掉request相关代码，因 range --> observeOn,这一段中间过程本身就是响应式拉取数据
-        bserveOn这个操作符内部有一个缓冲区，Android环境下长度是16，它会告诉range最多发送16个事件，充满缓冲区即可
+        observeOn这个操作符内部有一个缓冲区，在Android环境下长度是16，它会告诉range最多发送16个事件，充满缓冲区即可
          */
         Observable.range(1, 10000)
                 .observeOn(Schedulers.newThread())
@@ -91,7 +91,7 @@ public class BackPreActi extends Activity {
                     @Override
                     public void onNext(Integer integer) {
                         Log.w("TAG","---->"+ integer);
-                        request(1); //处理完毕之后，在通知被观察者发送下一个事件
+                        request(1); //处理完毕之后，再通知被观察者发送下一个事件
                     }
                 });
     }
