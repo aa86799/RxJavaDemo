@@ -13,9 +13,9 @@ android {
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
-        jackOptions {//java8
-            enabled true
-        }
+//        jackOptions {//java8, 在新的studio2.4 preview中已自动支持  无需要配置其它了
+//            enabled true
+//        }
     }
 
     compileOptions {
@@ -41,13 +41,14 @@ dependencies {
     compile 'io.reactivex.rxjava2:rxjava:+'
     compile 'io.reactivex.rxjava2:rxandroid:+'
     /*
-    reactive streams(反应流)主动提供一个异步非阻塞背压流处理的标准
-    在依赖了上面两个库后，发现 反应流这个不用再 单独引入
-     */
-//    compile 'org.reactivestreams:reactive-streams:1.0.0.final'
+        reactive streams(反应流)主动提供一个异步非阻塞背压流处理的标准
+        在依赖了上面两个库后，发现 反应流这个不用再 单独引入
+         */
+    //    compile 'org.reactivestreams:reactive-streams:1.0.0.final'
     /*
-    retrofit官方还有没有出 与 rxjava2 相适配的 库
-    这是一个大神写的
-     */
-//    compile 'com.jakewharton.retrofit:retrofit2-rxjava2-adapter:1.0.0'
+        retrofit官方还有没有出 与 rxjava2 相适配的 库
+        这是一个大神写的
+         */
+    //    compile 'com.jakewharton.retrofit:retrofit2-rxjava2-adapter:1.0.0'
+    compile 'io.reactivex:rxjava-math:1.0.0'
 }
