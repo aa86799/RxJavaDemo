@@ -132,7 +132,7 @@ public class BackPreActi extends Activity {
 
     private void testFlowSpeedControl3() {
         /*
-        对于不支持背压的Observable除了使用上述两类生硬的操作符之外，还有更好的选择：onBackpressurebuffer，onBackpressureDrop。
+        对于不支持背压的Observable除了使用上述两类生硬的操作符之外，还有更好的选择：onBackpressureBuffer，onBackpressureDrop。
         onBackpressurebuffer：把observable发送出来的事件做缓存，当request方法被调用的时候，
                 给下层流发送一个item(如果给这个缓存区设置了大小，那么超过了这个大小就会抛出异常)。
         onBackpressureDrop：将observable发送的事件抛弃掉，直到subscriber再次调用request（n）方法的时候，
