@@ -14,8 +14,11 @@ import com.stone.rxandroid.bean.Student;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
+import rx.Observer;
+import rx.Scheduler;
 import rx.Single;
 import rx.SingleSubscriber;
 import rx.Subscriber;
@@ -23,7 +26,11 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.functions.Func0;
 import rx.functions.Func1;
+import rx.functions.Func2;
+import rx.observables.BlockingObservable;
+import rx.observables.GroupedObservable;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -185,6 +192,15 @@ public class MyObservable {
                         Log.d(tag, "number:" + number + ".." + Thread.currentThread().getName());
                     }
                 });
+        /*
+        RxJava提供了5种调度器:
+          .io()
+          .computation()
+          .immediate()
+          .newThread()
+          .trampoline()
+         */
+//        Schedulers.test()
     }
 
     public void testMap(final Context context) {//map变换
@@ -205,9 +221,11 @@ public class MyObservable {
                 });
     }
 
+    List<Student> users;
+    private List<Student> getStudents() {
+        if (users != null) return users;
 
-    public void testFlatMap() {
-        List<Student> users = new ArrayList<>();
+        users = new ArrayList<>();
         List<Student.Course> courses;
         for (int i = 0; i < 5; i++) {
             courses = new ArrayList<>();
@@ -216,10 +234,30 @@ public class MyObservable {
             }
             users.add(new Student(18 + i, "name" + i, courses));
         }
+        return users;
+    }
+
+    public void testConcatMap() {
+        Observable.from(getStudents())
+                .concatMap(new Func1<Student, Observable<Student.Course>>() {
+                    @Override
+                    public Observable<Student.Course> call(Student student) {
+                        return Observable.from(student.getCourseList());
+                    }
+                })
+                .subscribe(new Action1<Student.Course>() {
+                    @Override
+                    public void call(Student.Course course) {
+                        System.out.println("testConcatMap " + course.getName());
+                    }
+                });
+    }
+
+    public void testFlatMap() {
         /*
         打印一组Student的name
          */
-        Observable.from(users)
+        Observable.from(getStudents())
                 .map(new Func1<Student, String>() {
                     @Override
                     public String call(Student user) {
@@ -235,7 +273,7 @@ public class MyObservable {
         /*
         打印一组Student 每个对应的所有course
          */
-        Observable.from(users)
+        Observable.from(getStudents())
                 .subscribe(new Action1<Student>() {
                     @Override
                     public void call(Student student) {
@@ -249,7 +287,7 @@ public class MyObservable {
         如上需要使用for，若不想用，且想要Subscriber中传入的是Course对象
         flatMap 适用将 T 变换为 Observable<R>
          */
-        Observable.from(users)
+        Observable.from(getStudents())
                 .flatMap(new Func1<Student, Observable<Student.Course>>() {
                     @Override
                     public Observable<Student.Course> call(Student student) {
@@ -265,15 +303,35 @@ public class MyObservable {
     }
 
     public void testSwitchMap() {
-        Observable.just(2).switchMap(new Func1<Integer, Observable<String>>() {
+        /*
+        与flatMap类似，除了一点: 当源Observable发射一个新的数据项时，
+如果旧数据项订阅还未完成，就取消旧订阅数据和停止监视那个数据项产生的Observable,开始监视新的数据项.
+         */
+        Observable.just(2,3,4,5).switchMap(new Func1<Integer, Observable<String>>() {
             @Override
             public Observable<String> call(Integer integer) {
-                return null;
+                return Observable.just(integer + " trans").subscribeOn(Schedulers.newThread());
+            }
+        }).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<String>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(String s) {
+
             }
         });
         /*
-        switchMap 适用将 Observable<T> 变换成 Observable<R>
+        当源Observable变换出的Observable同时进行时,  如果前面的未完成，后面的会把前面的取消
          */
+
     }
 
     public void testFilter() {
@@ -343,6 +401,11 @@ public class MyObservable {
     }
 
     public void testLift() {
+        /*
+        lift() 是针对事件项和事件序列的
+        对于事件项的类型转换，主要在一个新的Subscriber中完成。
+         */
+
         //传Integer 变换成 String
         Observable.just(100).lift(new Observable.Operator<String, Integer>() {
             @Override
@@ -363,6 +426,11 @@ public class MyObservable {
                     public void onError(Throwable e) {
                         subscriber.onError(e);
                     }
+
+                    @Override
+                    public void onStart() {
+                        subscriber.onStart();
+                    }
                 };
             }
         }).subscribe(new Action1<String>() {
@@ -371,6 +439,20 @@ public class MyObservable {
                 Log.d(tag, "testLift: " + s);
             }
         });
+
+        Observable.just(100)
+                .map(new Func1<Integer, String>() {
+                    @Override
+                    public String call(Integer integer) {
+                        return integer + "";
+                    }
+                })
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+
+                    }
+                });
     }
 
     public void testCompose() {
@@ -431,9 +513,9 @@ public class MyObservable {
          */
         /*
         线程控制：Scheduler
-            > 链式方法(map、compose等) 运行于前一个observeOn所定义的线程，即使之间隔着subscribeOn；
-            当之前没有observeOn时，则运行于最近的subscribeOn所定义的线程
-            > 链式方法(map、compose等) 默认没有定义observeOn、subscribeOn，即运行于当前线程
+            > 默认没有定义observeOn、subscribeOn，即运行于当前线程
+            >  运行于前一个observeOn所定义的线程，即使之间隔着subscribeOn；
+            当之前没有observeOn时，则运行于最近的subscribeOn所指定的线程
             > Subscriber 的 onStart() 可以用作流程开始前的初始化，但onStart()运行的线程不一定，
                 Observable.doOnSubscribe(Action0 action) 与 Subscriber 的 onStart() 对应，
                 且可以指定线程，由最近的subscribeOn()指定
@@ -589,4 +671,220 @@ public class MyObservable {
         });
 
     }
+
+    public void testDefer() {
+        /*
+        defer，创建一个推迟的Observable。直到订阅时才真正创建，前面只是声明
+         */
+        Observable<String> deferred = Observable.defer(this::getString);
+        deferred.subscribe(new Subscriber<String>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(String s) {
+                System.out.println("defer onNext --" + s);
+            }
+        });
+    }
+
+    private Observable<String> getString() {
+//        return Observable.create(subscriber -> {
+        return Observable.unsafeCreate(subscriber -> {
+            if (subscriber.isUnsubscribed()) {
+                return;
+            }
+            subscriber.onNext("");
+        });
+    }
+
+    public void testGroupBy() {
+        List<Student> list = getStudents();
+        list.add(new Student(18, "groupBy", null));
+        Observable<GroupedObservable<Integer, Student>> groupedObservable =
+                Observable.from(getStudents()).groupBy(new Func1<Student, Integer>() {
+                    @Override
+                    public Integer call(Student student) {
+                        return student.getAge();//相当于分组的依据 key
+                    }
+                });
+        Observable.concat(groupedObservable).subscribe(new Subscriber<Student>() {
+           @Override
+           public void onCompleted() {
+
+           }
+
+           @Override
+           public void onError(Throwable e) {
+
+           }
+
+           @Override
+           public void onNext(Student student) {
+               System.out.println("after groupBy " + student.getName() + "--" + student.getAge());
+           }
+       });
+    }
+
+    public void testCast() {
+        Observable.just(1,2,3)
+                .cast(Object.class)
+                .subscribe(new Observer<Object>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        System.out.println("testCast " + e.getMessage());
+                    }
+
+                    @Override
+                    public void onNext(Object s) {
+                        System.out.println("testCast " + s.toString());
+                    }
+                });
+    }
+
+    public void testBlockingObservable() {
+        /*
+        阻塞式Observable
+        当满足条件的数据发射出来的时候才会返回一个BlockingObservable对象
+         */
+        BlockingObservable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>() {
+            @Override
+            public void call(Subscriber<? super Integer> subscriber) {
+                for (int i = 0; i < 5; i++) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (!subscriber.isUnsubscribed()) {
+                        System.out.println("testBlockingObservable onNext:" + i);
+                        subscriber.onNext(i);
+                    }
+                }
+                if (!subscriber.isUnsubscribed()) {
+                    subscriber.onCompleted();
+                }
+            }
+        }).toBlocking();
+
+        observable.forEach(new Action1<Integer>() {//遍历发射
+            @Override
+            public void call(Integer integer) {
+                System.out.println("testBlockingObservable each " + integer);
+            }
+        });
+
+        /*
+        结合first过滤. 符合条件后，BlockingObservable就不再发射
+         */
+        int filter = observable.first(integer -> integer > 2);
+        System.out.println("testBlockingObservable " + filter);
+    }
+
+    public void testRetry() {
+        Observable.just(1,2,"admin")
+                .map(new Func1<Object, Integer>() {
+                    @Override
+                    public Integer call(Object o) {
+                        return (Integer) o;
+                    }
+                })
+//                .retry()  //若有错，一直重新发射，直到无错误
+//                .retry(2) //若有错，只重新发射2次，直到无错误
+                .retry(new Func2<Integer, Throwable, Boolean>() {//正常接收到的值, 发生的异常, 在发生错误时是否要重新发射
+                    @Override
+                    public Boolean call(Integer integer, Throwable throwable) {
+                        return false;//false 不重新发射， true otherwise
+                    }
+                })
+                .subscribe(new Observer<Integer>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        System.out.println("retry onError " + e.getMessage());
+                    }
+
+                    @Override
+                    public void onNext(Integer integer) {
+                        System.out.println("retry " + integer);
+                    }
+                });
+    }
+
+    private volatile int count;
+    public void testRetryWhen() {
+        /*
+        retryWhen 类似 retry
+        如果发射一个error，会传递给其观察者，并交由retryWhen中的Func1来操作，Func1又由Func2组成，
+        Func2的call函数的返回值决定订阅过程是否重复发生：如果发射的error，订阅会终止，如果发射的是数据项，会重新订阅
+         */
+
+        Observable.create((Subscriber<? super String> s) -> {
+            count++;
+            if (count > 1) {
+                return;
+            }
+            System.out.println("RetryWhen subscribing");
+            s.onNext("nothing");
+            s.onError(new RuntimeException("RetryWhen always fails"));
+        }).retryWhen(
+                //如果发射的error，订阅会终止
+                /*new Func1<Observable<? extends Throwable>, Observable<Throwable>>() {
+            @Override
+            public Observable<Throwable> call(Observable<? extends Throwable> observable) {
+                return observable.zipWith(Observable.range(1, 3), new Func2<Throwable, Integer, Throwable>() {
+                    @Override
+                    public Throwable call(Throwable throwable, Integer integer) {
+                        return throwable;
+                    }
+                });
+            }
+        }*/
+        //如果发射的是数据项，会重新订阅
+        new Func1<Observable<? extends Throwable>, Observable<Long>>() {
+            @Override
+            public Observable<Long> call(Observable<? extends Throwable> observable) {
+                return observable.zipWith(Observable.range(1, 3), new Func2<Throwable, Integer, Integer>() {
+                    @Override
+                    public Integer call(Throwable throwable, Integer integer) {
+                        return integer;
+                    }
+                }).flatMap(i -> {
+                            System.out.println("RetryWhen delay retry by " + i + " second(s)");
+                    return Observable.timer(i, TimeUnit.SECONDS);
+                });
+
+            }
+        }
+
+        //上面的lambda简写形式
+        /*attempts -> {
+            return attempts.zipWith(Observable.range(1, 3), (t, i) -> i).flatMap(i -> {
+                System.out.println("RetryWhen delay retry by " + i + " second(s)");
+                return Observable.timer(i, TimeUnit.SECONDS);
+            });
+        }*/).toBlocking().forEach(new Action1<String>() {
+            @Override
+            public void call(String s) {
+                System.out.println("RetryWhen each " + s);
+            }
+        });
+    }
+
 }
