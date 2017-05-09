@@ -10,7 +10,7 @@
 .idea*
 gradle*
 
-/app/src/test
+#/app/src/test
 /app/src/androidTest
 /rx2/src/test
 /rx2/src/androidTest
