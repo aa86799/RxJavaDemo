@@ -456,34 +456,13 @@ public class MyObservable {
     }
 
     public void testCompose() {
-        Func1<Integer, String> map = new Func1<Integer, String>() {
-            @Override
-            public String call(Integer integer) {
-                return "map-call: " + Thread.currentThread().getName() + "--->" + integer;
-            }
-        };
+
         Action1 action = new Action1<String>() {
             @Override
             public void call(String s) {
-                System.out.println("Observer: " + Thread.currentThread().getName() + ", " + s);
+                System.out.println("testCompose-Observer: " + Thread.currentThread().getName() + ", " + s);
             }
         };
-        Observable.just(2)//Observer: main, map-call: RxIoScheduler-3--->2
-                .map(map)
-                .subscribeOn(io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(action);
-        Observable.just(3)//线程范围同上
-                .map(map)
-                .subscribeOn(io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(action);
-        Observable.just(4)//这都在main线程
-                .subscribeOn(io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .map(map)
-                .subscribe(action);
-
 
         Observable.Transformer<Integer, String> transformer = new Observable.Transformer<Integer, String>() {
 
@@ -492,34 +471,64 @@ public class MyObservable {
                 return integerObservable.map(new Func1<Integer, String>() {
                     @Override
                     public String call(Integer integer) {
-                        return "tran.call: " + Thread.currentThread().getName() + ", " + integer;
+                        return "testCompose-tran.call: " + Thread.currentThread().getName() + ", " + integer;
                     }
                 });
             }
         };
-        Observable.just(5).compose(transformer).subscribeOn(io()).observeOn(AndroidSchedulers.mainThread()).subscribe(action);//tran.call: RxIoScheduler-3, 5
-        Observable.just(6).compose(transformer).subscribeOn(io()).observeOn(AndroidSchedulers.mainThread()).subscribe(action);//线程范围同上
-        Observable.just(7).compose(transformer).subscribeOn(io()).observeOn(AndroidSchedulers.mainThread()).subscribe(action);//线程范围同上
-        Observable.just(8).compose(transformer).observeOn(AndroidSchedulers.mainThread()).subscribeOn(io()).subscribe(action);//线程范围同上
-        Observable.just(9).subscribeOn(io()).compose(transformer).observeOn(AndroidSchedulers.mainThread()).subscribe(action);//线程范围同上
-        Observable.just(10).observeOn(AndroidSchedulers.mainThread()).compose(transformer).subscribeOn(io()).subscribe(action);//这样都在main线程
-        Observable.just(11).subscribeOn(io()).observeOn(AndroidSchedulers.mainThread()).compose(transformer).subscribe(action);//这样都在main线程
-        Observable.just(12).compose(transformer).subscribe(action);//这样都在main线程  即当前线程
+//
+//        //OnSubscribe.call: RxIoScheduler-3； Observer: main； tran.call: RxIoScheduler-3
+//        Observable.create(new Observable.OnSubscribe<Integer>() {
+//            @Override
+//            public void call(Subscriber<? super Integer> subscriber) {
+//                System.out.println( "testCompose-OnSubscribe.call: " + Thread.currentThread().getName());
+//                subscriber.onNext(5);
+//            }
+//        }).compose(transformer).subscribeOn(io()).observeOn(AndroidSchedulers.mainThread()).subscribe(action);
+//
+//        //nSubscribe.call: RxIoScheduler-2; Observer: main; testCompose-tran.call: RxIoScheduler-2
+//        Observable.create((Observable.OnSubscribe<Integer>) subscriber -> {
+//            System.out.println( "testCompose-OnSubscribe.call: " + Thread.currentThread().getName());
+//            subscriber.onNext(6);
+//        }).compose(transformer).observeOn(AndroidSchedulers.mainThread()).subscribeOn(io()).subscribe(action);
+//
+//        //OnSub:io; Ob:main; tran:io
+//        Observable.create((Observable.OnSubscribe<Integer>) subscriber -> {
+//            System.out.println( "testCompose-OnSubscribe.call: " + Thread.currentThread().getName());
+//            subscriber.onNext(7);
+//        }).subscribeOn(io()).compose(transformer).observeOn(AndroidSchedulers.mainThread()).subscribe(action);
+//
+//        //OnSub:io; Ob:main; tran:main
+//        Observable.create((Observable.OnSubscribe<Integer>) subscriber -> {
+//            System.out.println( "testCompose-OnSubscribe.call: " + Thread.currentThread().getName());
+//            subscriber.onNext(8);
+//        }).observeOn(AndroidSchedulers.mainThread()).compose(transformer).subscribeOn(io()).subscribe(action);
+//
+//        //OnSub:io; Ob:main; tran:main
+//        Observable.create((Observable.OnSubscribe<Integer>) subscriber -> {
+//            System.out.println( "testCompose-OnSubscribe.call: " + Thread.currentThread().getName());
+//            subscriber.onNext(9);
+//        }).subscribeOn(io()).observeOn(AndroidSchedulers.mainThread()).compose(transformer).subscribe(action);
+
+        //OnSub:main; Ob:main; tran:main
+        Observable.create((Observable.OnSubscribe<Integer>) subscriber -> {
+            System.out.println( "testCompose-OnSubscribe.call: " + Thread.currentThread().getName());
+            subscriber.onNext(10);
+        }).compose(transformer).subscribe(action);
+
         /*
         以上对比看，compose 和 map 没什么不同
         注意：transformer.call(Observable<T> observable)，它的参数是Observable
               表示在内部Observable对象又可以经过一系列的链式变换
               compose 适用于 在内部组合一组变换的场景
          */
+
         /*
         线程控制：Scheduler
-            > 默认没有定义observeOn、subscribeOn，即运行于当前线程
-            >  运行于前一个observeOn所定义的线程，即使之间隔着subscribeOn；
-            当之前没有observeOn时，则运行于最近的subscribeOn所指定的线程
-            > Subscriber 的 onStart() 可以用作流程开始前的初始化，但onStart()运行的线程不一定，
-                Observable.doOnSubscribe(Action0 action) 与 Subscriber 的 onStart() 对应，
-                且可以指定线程，由最近的subscribeOn()指定
-
+            > 默认没有指定observeOn、subscribeOn，即运行于当前线程
+            > subscribeOn 指定 订阅事件发生(OnSubscribe)的线程
+            > observeOn 指定 在其之后的所有事件发生的线程，即使后面出现了subscribeOn
+            > 如果subscribeOn出现前，没有observeOn，这时，subscribeOn 指定 OnSubscribe 及它之前的所有事件
          */
 
     }
