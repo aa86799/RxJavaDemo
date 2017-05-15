@@ -526,9 +526,10 @@ public class MyObservable {
         /*
         线程控制：Scheduler
             > 默认没有指定observeOn、subscribeOn，即运行于当前线程
-            > subscribeOn 指定 订阅事件发生(OnSubscribe)的线程
-            > observeOn 指定 在其之后的所有事件发生的线程，即使后面出现了subscribeOn
-            > 如果subscribeOn出现前，没有observeOn，这时，subscribeOn 指定 OnSubscribe 及它之前的所有事件
+            > subscribeOn 指定 订阅事件发生(OnSubscribe)的线程。
+                若仅出现它，不出现observeOn, 还会影响其它所有事件
+            > observeOn 指定 在其之后的所有事件发生的线程，即使后面出现了 subscribeOn
+            > 若两者同时出现，subscribeOn 影响 observeOn 出现前的所有事件 及 OnSubscribe 事件
          */
 
     }
