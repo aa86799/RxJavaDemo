@@ -16,7 +16,7 @@ import io.reactivex.schedulers.Schedulers;
  * email  : aa86799@163.com
  * time   : 25/04/2017 13 11
  */
-public class BackPreActi extends Activity {
+public class BackPreActivity extends Activity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

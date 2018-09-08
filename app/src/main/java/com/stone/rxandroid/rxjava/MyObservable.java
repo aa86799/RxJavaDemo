@@ -12,13 +12,15 @@ import android.widget.ImageView;
 import com.stone.rxandroid.R;
 import com.stone.rxandroid.bean.Student;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Scheduler;
 import rx.Single;
 import rx.SingleSubscriber;
 import rx.Subscriber;
@@ -26,7 +28,6 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
-import rx.functions.Func0;
 import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.observables.BlockingObservable;
@@ -83,8 +84,16 @@ public class MyObservable {
     }
 
     public Observable testFrom() {
+        /*
+        from 适用于 将集合、数组中的元素， 一条一条的遍历、转换
+        紧跟的变换订阅  都适应此规则
+         */
         String[] words = {"fromHello", "fromHi", "fromAloha"};
-        return Observable.from(words);
+//        return Observable.from(words); //可以from数组
+        List<String> list = new ArrayList<>();
+        list.addAll(Arrays.asList(words));//可以from List集合
+        return Observable.from(list);
+
         // 将会依次调用：
         // onNext("Hello");
         // onNext("Hi");
@@ -203,22 +212,13 @@ public class MyObservable {
 //        Schedulers.test()
     }
 
-    public void testMap(final Context context) {//map变换
+    public void testMap(final Context context) {//map变换 -> Observable<R>
         Observable.just(R.drawable.a222)
-                .map(new Func1<Integer, Bitmap>() {
-
-                    @Override
-                    public Bitmap call(Integer integer) {
-                        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), integer);
-                        return bitmap;
-                    }
+                .map(integer -> {
+                    Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), integer);
+                    return bitmap;
                 })
-                .subscribe(new Action1<Bitmap>() {
-                    @Override
-                    public void call(Bitmap bitmap) {
-                        Log.d(tag, bitmap.getWidth() + ".." + bitmap.getHeight());
-                    }
-                });
+                .subscribe(bitmap -> Log.d(tag, bitmap.getWidth() + ".." + bitmap.getHeight()));
     }
 
     List<Student> users;
@@ -227,128 +227,101 @@ public class MyObservable {
 
         users = new ArrayList<>();
         List<Student.Course> courses;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             courses = new ArrayList<>();
             for (int j = 0; j < 3; j++) {
                 courses.add(new Student.Course(i + "--course--" + j));
             }
-            users.add(new Student(18 + i, "name" + i, courses));
+            users.add(new Student(18 + (new Random().nextInt(3)), "name" + i, courses));
         }
         return users;
     }
 
     public void testConcatMap() {
         Observable.from(getStudents())
-                .concatMap(new Func1<Student, Observable<Student.Course>>() {
-                    @Override
-                    public Observable<Student.Course> call(Student student) {
-                        return Observable.from(student.getCourseList());
-                    }
-                })
-                .subscribe(new Action1<Student.Course>() {
-                    @Override
-                    public void call(Student.Course course) {
-                        System.out.println("testConcatMap " + course.getName());
-                    }
-                });
+                .map(Student::getCourseList) //map变换  ->  Observable<List<Student.Course>>
+                .subscribe(courses -> System.out.println(courses.size()));
+
+        /*
+        map变换时，内部不能再创建Observable，否则订阅时，会收到一个Observable对象
+
+        concatMap与flatMap的相同点：内部需要再创建Observable；
+        concatMap变换时：若内部也是多线程创建Observable<R>，则在订阅时，与单线程表现一致：都是有序的
+         */
+        Observable.from(getStudents())
+                .concatMap(student -> Observable.from(student.getCourseList()).subscribeOn(Schedulers.io()))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(course -> System.out.println("testConcatMap " + course.getName()));
+
     }
 
     public void testFlatMap() {
         /*
         打印一组Student的name
          */
-        Observable.from(getStudents())
-                .map(new Func1<Student, String>() {
-                    @Override
-                    public String call(Student user) {
-                        return user.getName();
-                    }
-                })
-                .subscribe(new Action1<String>() {
-                    @Override
-                    public void call(String name) {
-                        Log.d(tag, name);
-                    }
-                });
+//        Observable.from(getStudents())
+//                .map(user -> user.getName())
+//                .subscribe(name -> Log.d(tag, name));
         /*
         打印一组Student 每个对应的所有course
          */
-        Observable.from(getStudents())
-                .subscribe(new Action1<Student>() {
-                    @Override
-                    public void call(Student student) {
-                        List<Student.Course> list = student.getCourseList();
-                        for (int i = 0; i < list.size(); i++) {
-                            Log.d(tag, list.get(i).getName());
-                        }
-                    }
-                });
+//        Observable.from(getStudents())
+//                .subscribe(student -> {
+//                    List<Student.Course> list = student.getCourseList();
+//                    for (int i = 0; i < list.size(); i++) {
+//                        Log.d(tag, list.get(i).getName());
+//                    }
+//                });
         /*
         如上需要使用for，若不想用，且想要Subscriber中传入的是Course对象
-        flatMap 适用将 T 变换为 Observable<R>
+        flatMap 适用将 Iterable<T> 变换为 Observable<R>
+        变换时：若内部也是多线程创建Observable<R>，则在订阅时，可能发生顺序错乱；若单线程，当然是有序的
          */
         Observable.from(getStudents())
-                .flatMap(new Func1<Student, Observable<Student.Course>>() {
-                    @Override
-                    public Observable<Student.Course> call(Student student) {
-                        return Observable.from(student.getCourseList());
-                    }
-                })
-                .subscribe(new Action1<Student.Course>() {
-                    @Override
-                    public void call(Student.Course course) {
-                        Log.d(tag, "flatmap: " + course.getName());
-                    }
-                });
+                .flatMap(student -> Observable.from(student.getCourseList()).subscribeOn(Schedulers.io()))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(course -> Log.d(tag, "22flatMap: " + course.getName()));
     }
 
     public void testSwitchMap() {
         /*
         与flatMap类似，除了一点: 当源Observable发射一个新的数据项时，
 如果旧数据项订阅还未完成，就取消旧订阅数据和停止监视那个数据项产生的Observable,开始监视新的数据项.
+    如下：最后执行的是 数据项 5，  所以会输出：testSwitchMap5
          */
-        Observable.just(2,3,4,5).switchMap(new Func1<Integer, Observable<String>>() {
-            @Override
-            public Observable<String> call(Integer integer) {
-                return Observable.just(integer + " trans").subscribeOn(Schedulers.newThread());
-            }
-        }).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<String>() {
-            @Override
-            public void onCompleted() {
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onNext(String s) {
-
-            }
-        });
+        Observable.just(2,3,4,5)
+//                .map(integer -> integer + " testSwitchMap") //map变换后，会订阅到多个条目
+                .switchMap(integer -> Observable.just(integer + " testSwitchMap").subscribeOn(Schedulers.newThread()))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(s -> System.out.println(s));
         /*
         当源Observable变换出的Observable同时进行时,  如果前面的未完成，后面的会把前面的取消
          */
+        Observable.just(10, 20, 30).switchMap(integer -> {
+            //10的延迟执行时间为200毫秒、20和30的延迟执行时间为180毫秒
+            int delay = 200;
+            if (integer > 10)
+                delay = 180;
+
+            return Observable.from(new Integer[]{integer, integer / 2}).delay(delay, TimeUnit.MILLISECONDS);
+        }).observeOn(AndroidSchedulers.mainThread()).subscribe(new Action1<Integer>() {
+            @Override
+            public void call(Integer integer) {
+                System.out.println("switchMap Next:" + integer);
+            }
+        });
 
     }
 
-    public void testFilter() {
+    public void testFilter() {//过滤
         Observable.from(new Integer[]{1, 2, 3, 4, 5})
-                .filter(new Func1<Integer, Boolean>() {
-                    @Override
-                    public Boolean call(Integer number) {
-                        // 偶数返回true，则表示剔除奇数，留下偶数
-                        return number % 2 == 0;
-                    }
+                .filter(number -> {
+                    // 偶数返回true，则表示剔除奇数，留下偶数
+                    return number % 2 == 0;
                 })
-                .subscribe(new Action1<Integer>() {
-                    @Override
-                    public void call(Integer number) {
-                        Log.i(tag, "filter - number:" + number);
-                    }
-                });
+                .subscribe(number -> Log.i(tag, "filter - number:" + number));
         /*
         public final Observable<T> filter(Func1<? super T, Boolean> predicate)
         过滤： 满足Func1#call 返回值=true
@@ -398,6 +371,8 @@ public class MyObservable {
 
                     }
                 });*/
+
+        //类似还有   last操作符
     }
 
     public void testLift() {
@@ -407,75 +382,46 @@ public class MyObservable {
          */
 
         //传Integer 变换成 String
-        Observable.just(100).lift(new Observable.Operator<String, Integer>() {
-            @Override
-            public Subscriber<? super Integer> call(final Subscriber<? super String> subscriber) {
-                // 将事件序列中的 Integer 对象转换为 String 对象
-                return new Subscriber<Integer>() {
-                    @Override
-                    public void onNext(Integer integer) {
-                        subscriber.onNext("" + integer);
-                    }
+        Observable.just(100).lift((Subscriber<? super String> subscriber) -> {
+                    // 将事件序列中的 Integer 对象转换为 String 对象
+                    return new Subscriber<Integer>() {
+                        @Override
+                        public void onNext(Integer integer) {
+                            System.out.println("testLift lift内部订阅到了");
+                            subscriber.onNext("" + integer);
+                        }
 
-                    @Override
-                    public void onCompleted() {
-                        subscriber.onCompleted();
-                    }
+                        @Override
+                        public void onCompleted() {
+                            subscriber.onCompleted();
+                        }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        subscriber.onError(e);
-                    }
+                        @Override
+                        public void onError(Throwable e) {
+                            subscriber.onError(e);
+                        }
 
-                    @Override
-                    public void onStart() {
-                        subscriber.onStart();
-                    }
-                };
-            }
-        }).subscribe(new Action1<String>() {
-            @Override
-            public void call(String s) {
-                Log.d(tag, "testLift: " + s);
-            }
-        });
+                        @Override
+                        public void onStart() {
+                            subscriber.onStart();
+                        }
+                    };
+                }).subscribe(s -> Log.d(tag, "testLift: " + s));
+        /*
+        lift 常用于模板变换。将经常用到的变换操作，封装成lift变换操作，在其内部订阅到时可执行相应操作
+        原理：将数据项 进行拦截，添加相应处理操作，再交由下一个Subscriber
+        与compose的不同：list是操作的数据项，进行拦截操作； compose是操作的Observable，返回另一个Observable
+         */
 
-        Observable.just(100)
-                .map(new Func1<Integer, String>() {
-                    @Override
-                    public String call(Integer integer) {
-                        return integer + "";
-                    }
-                })
-                .subscribe(new Action1<String>() {
-                    @Override
-                    public void call(String s) {
 
-                    }
-                });
     }
 
     public void testCompose() {
 
-        Action1 action = new Action1<String>() {
-            @Override
-            public void call(String s) {
-                System.out.println("testCompose-Observer: " + Thread.currentThread().getName() + ", " + s);
-            }
-        };
+        Action1 action = s -> System.out.println("testCompose-Observer: " + Thread.currentThread().getName() + ", " + s);
 
-        Observable.Transformer<Integer, String> transformer = new Observable.Transformer<Integer, String>() {
-
-            @Override
-            public Observable<String> call(Observable<Integer> integerObservable) {
-                return integerObservable.map(new Func1<Integer, String>() {
-                    @Override
-                    public String call(Integer integer) {
-                        return "testCompose-tran.call: " + Thread.currentThread().getName() + ", " + integer;
-                    }
-                });
-            }
-        };
+        Observable.Transformer<Integer, String> transformer = integerObservable ->
+                integerObservable.map(integer -> "testCompose-tran.call: " + Thread.currentThread().getName() + ", " + integer);
 //
 //        //OnSubscribe.call: RxIoScheduler-3； Observer: main； tran.call: RxIoScheduler-3
 //        Observable.create(new Observable.OnSubscribe<Integer>() {
@@ -521,6 +467,7 @@ public class MyObservable {
         注意：transformer.call(Observable<T> observable)，它的参数是Observable
               表示在内部Observable对象又可以经过一系列的链式变换
               compose 适用于 在内部组合一组变换的场景
+              比如：经常要切换线程，就可以写一个transformer来操作线程切换的方法；再使用compose来组合
          */
 
         /*
@@ -534,51 +481,65 @@ public class MyObservable {
 
     }
 
-    public void testDoMethod() {
-        Observable.create(new Observable.OnSubscribe<Student>() {
-            @Override
-            public void call(Subscriber<? super Student> subscriber) {
-                Student person = new Student();
-                person.setAge(201);
-                subscriber.onNext(person);
-            }
-        })
-                .observeOn(io())//可以注释掉进行二次测试
-                .doOnNext(new Action1<Student>() {
-                    @Override
-                    public void call(Student person) {
-                        person.setAge(301);
-                    }
+    //切换线程  供 compose 使用
+    private <T> Observable.Transformer<T, T> switchThread() {
+        return observable -> observable.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public void testDoOnMethod() {
+        Observable.create((Observable.OnSubscribe<Student>) subscriber -> {
+            Student student = new Student();
+            student.setAge(201);
+            subscriber.onNext(student);
+        }).doOnSubscribe(() -> System.out.println("testDoOnMethod doOnSubscribe"))//作用跟Subscriber#onStart()相同 可指定异步线程
+                .doOnNext(student -> {// next
+                    student.setAge(301);
+                    System.out.println("testDoOnMethod " + Thread.currentThread().getName());
                 })
-                .subscribe(new Action1<Student>() {
-                    @Override
-                    public void call(Student person) {
-                        Log.d(tag, "call: " + person.getAge());//输出301
-                    }
-        });
+                .doOnError(throwable -> throwable.printStackTrace()) // error
+                .doOnCompleted(() -> { }) // complete
+                .compose(switchThread())
+                .subscribe(/*new Subscriber<Student>() {
+                @Override
+                public void onStart() {
+                    super.onStart();
+                    //订阅前开始执行，在onNext之前
+                    System.out.println("testDoOnMethod onStart");
+                }
+
+                @Override
+                public void onCompleted() {
+
+                }
+
+                @Override
+                public void onError(Throwable e) {
+
+                }
+
+                @Override
+                public void onNext(Student student) {
+                    Log.d(tag, "testDoOnMethod call: " + student.getAge());//输出301
+                }
+            }*/);
         /*
         Observable的doOnNext、doOnError、doComplete 与 Observer的 onNext、onError、onComplete 一一对应
         在同线程时，do操作在之后执行；在异线程时，do操作可能在之前执行
          */
 
-        Observable.create(subscriber -> {
-                Student person = new Student();
-                person.setAge(201);
-                subscriber.onNext(person);
-            }
-        );
     }
 
     public void testScheduleMethod() {
         /*
         可以有多种方式创建Scheduler; 可以schedule一个任务
          */
-        Subscription s = Schedulers.io().createWorker().schedule(new Action0() {
-            @Override
-            public void call() {
-                Log.d(tag, "testScheduleMethod");
-            }
-        });
+//        Subscription s = Schedulers.io().createWorker().schedule(() -> Log.d(tag, "testScheduleMethod"));
+
+//        Subscription s = Schedulers.io().createWorker().schedule(
+//                () -> Log.d(tag, "testScheduleMethod"), 1, TimeUnit.SECONDS); //延迟1秒执行
+
+        Subscription s = Schedulers.io().createWorker().schedulePeriodically(//初始延迟1毫秒执行，此后以5毫秒为周期执行
+                () -> Log.d(tag, "testScheduleMethod"), 2, 5, TimeUnit.MILLISECONDS);
         s.unsubscribe();
     }
 
@@ -652,18 +613,10 @@ public class MyObservable {
 //        Observable.just()
 //        Observable.from()
 
-        Observable.create(new Observable.OnSubscribe<Object>() {
-            @Override
-            public void call(Subscriber<? super Object> subscriber) {
-                /*
-
-                 */
-                subscriber.onNext("哈");
-                subscriber.onCompleted();
-            }
-        })
-
-                .subscribe(new Subscriber<Object>() {
+        Observable.create(subscriber -> {
+            subscriber.onNext("哈");
+            subscriber.onCompleted();
+        }).subscribe(new Subscriber<Object>() {
             @Override
             public void onCompleted() {
 
@@ -711,41 +664,41 @@ public class MyObservable {
             if (subscriber.isUnsubscribed()) {
                 return;
             }
-            subscriber.onNext("");
+            subscriber.onNext("jjjj");
         });
     }
 
     public void testGroupBy() {
         List<Student> list = getStudents();
-        list.add(new Student(18, "groupBy", null));
+        System.out.println((list  == null) + "" + (list.size()));
         Observable<GroupedObservable<Integer, Student>> groupedObservable =
-                Observable.from(getStudents()).groupBy(new Func1<Student, Integer>() {
-                    @Override
-                    public Integer call(Student student) {
-                        return student.getAge();//相当于分组的依据 key
-                    }
+                Observable.from(list).groupBy(student -> {
+                    return student.getAge();//相当于分组的依据 key
                 });
-        Observable.concat(groupedObservable).subscribe(new Subscriber<Student>() {
-           @Override
-           public void onCompleted() {
+        //concat 可以连接1个到9个Observable
+        Observable.concat(groupedObservable).subscribe(student ->
+               System.out.println("after groupBy " + student.getName() + "--" + student.getAge())
+       );
+    }
 
-           }
-
-           @Override
-           public void onError(Throwable e) {
-
-           }
-
-           @Override
-           public void onNext(Student student) {
-               System.out.println("after groupBy " + student.getName() + "--" + student.getAge());
-           }
-       });
+    public void testConcatWith() {
+        /*
+        concatWith 和concat类似，用于连接一个Observable
+        concat(a,b) <==> a.concatWith(b)
+         */
+        long time = System.currentTimeMillis();
+        Observable.timer(500, TimeUnit.MILLISECONDS)
+                .map(aLong -> Integer.parseInt("" + aLong))
+//        Observable.just(1)
+                .concatWith(Observable.just(2))
+                .map(integer -> integer % 2)
+                .concatWith(Observable.just(3))
+                .subscribe(integer -> System.out.println("testConcatWith " + integer));
     }
 
     public void testCast() {
         Observable.just(1,2,3)
-                .cast(Object.class)
+                .cast(Object.class) //类型转换成指定类型
                 .subscribe(new Observer<Object>() {
                     @Override
                     public void onCompleted() {
@@ -769,32 +722,25 @@ public class MyObservable {
         阻塞式Observable
         当满足条件的数据发射出来的时候才会返回一个BlockingObservable对象
          */
-        BlockingObservable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>() {
-            @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                for (int i = 0; i < 5; i++) {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    if (!subscriber.isUnsubscribed()) {
-                        System.out.println("testBlockingObservable onNext:" + i);
-                        subscriber.onNext(i);
-                    }
+        BlockingObservable<Integer> observable = Observable.create((Observable.OnSubscribe<Integer>) subscriber -> {
+            for (int i = 0; i < 5; i++) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
                 if (!subscriber.isUnsubscribed()) {
-                    subscriber.onCompleted();
+                    System.out.println("testBlockingObservable onNext:" + i);
+                    subscriber.onNext(i);
                 }
+            }
+            if (!subscriber.isUnsubscribed()) {
+                subscriber.onCompleted();
             }
         }).toBlocking();
 
-        observable.forEach(new Action1<Integer>() {//遍历发射
-            @Override
-            public void call(Integer integer) {
-                System.out.println("testBlockingObservable each " + integer);
-            }
-        });
+        //遍历发射
+        observable.forEach(integer -> System.out.println("testBlockingObservable each " + integer));
 
         /*
         结合first过滤. 符合条件后，BlockingObservable就不再发射
@@ -870,15 +816,12 @@ public class MyObservable {
         new Func1<Observable<? extends Throwable>, Observable<Long>>() {
             @Override
             public Observable<Long> call(Observable<? extends Throwable> observable) {
-                return observable.zipWith(Observable.range(1, 3), new Func2<Throwable, Integer, Integer>() {
-                    @Override
-                    public Integer call(Throwable throwable, Integer integer) {
-                        return integer;
-                    }
-                }).flatMap(i -> {
+                return observable.zipWith(Observable.range(1, 3),
+                            (Func2<Throwable, Integer, Integer>) (throwable, integer) -> integer)
+                        .flatMap(i -> {
                             System.out.println("RetryWhen delay retry by " + i + " second(s)");
-                    return Observable.timer(i, TimeUnit.SECONDS);
-                });
+                            return Observable.just(Long.parseLong("" + i));
+                        });
 
             }
         }
@@ -895,6 +838,24 @@ public class MyObservable {
                 System.out.println("RetryWhen each " + s);
             }
         });
+    }
+
+    public void testOnErrorReturn() {
+        System.out.println("1111");
+        Observable.just(1, "A")
+                .map(serializable -> serializable + "")
+//                .onErrorReturn(throwable -> {
+//                    System.out.println("testOnErrorReturn 1  " + throwable.getMessage());
+//                    return "has 1errors";
+//                })
+                .onErrorResumeNext(
+                        throwable -> {
+                    System.out.println("testOnErrorReturn 2  " + throwable.getMessage());
+                    return Observable.just("has 2errors");
+                })
+                .concatWith(Observable.just(" last "))
+                .subscribe(aString -> System.out.println("testOnErrorReturn 3 " + aString));
+
     }
 
 }

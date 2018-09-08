@@ -1,19 +1,17 @@
 package com.stone.rxandroid;
 
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.ImageView;
 
-import com.stone.rxandroid.rxbus.RxBus;
 import com.stone.rxandroid.rxjava.MyObservable;
-import com.stone.rxandroid.rxjava.subject.MySubject;
-import com.stone.rxandroid.rxmath.MyMath;
 
 
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
+import rx.Subscription;
 import rx.schedulers.Schedulers;
 
 /**
@@ -22,7 +20,7 @@ import rx.schedulers.Schedulers;
  * email  : aa86799@163.com
  */
 
-public class RxJavaActivity extends Activity {
+public class RxJavaActivity extends AppCompatActivity {
 
     private String tag = this.getClass().getSimpleName();
 
@@ -74,22 +72,24 @@ public class RxJavaActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        setContentView(R.layout.acti_main);
+        ImageView iv = (ImageView) findViewById(R.id.iv);
         test = new MyObservable();
+        test.setImage(iv, R.drawable.a222);
+
         test.test();
 
         Observable observable1 = test.testNormal();
         Observable observable2 = test.testJust();
         Observable observable3 = test.testFrom();
-        test.testSubscribe(observable1);
+        test.testSubscribe(observable2);
         observable1.subscribeOn(Schedulers.immediate());
-//        Subscription subscription = observable1.subscribe(mObserver1);//订阅并执行call
-//        subscription.unsubscribe(); //取消订阅
+        Subscription subscription = observable1.subscribe(mObserver1);//订阅并执行call
+        subscription.unsubscribe(); //取消订阅
 
-        setContentView(R.layout.acti_main);
-        ImageView iv = (ImageView) findViewById(R.id.iv);
-        test.setImage(iv, R.drawable.a222);
+        test.testDefer();
 
-        test.testScheduler();
+        test.testScheduler(); //线程调度
 
         test.testMap(this);
 
@@ -97,17 +97,23 @@ public class RxJavaActivity extends Activity {
 
         test.testFlatMap();
 
+        test.testSwitchMap();
+
         test.testFilter();
+
+        test.testFirst();
 
         test.testLift();
 
         test.testCompose();
 
+        test.testDoOnMethod();
+
         test.testScheduleMethod();
 
-        test.testDefer();
-
         test.testGroupBy();
+
+        test.testConcatWith();
 
         test.testCast();
 
@@ -117,51 +123,53 @@ public class RxJavaActivity extends Activity {
 
         test.testRetryWhen();
 
-        /*
-        rxbus
-         */
-        Observable<String> observable = RxBus.getInstance().register(String.class);
-        observable.map(s -> {
-            try {
-                int v = Integer.valueOf(s);
-                System.out.println("map变换成功, source = " + s);
-                return v;
-            } catch (Exception e) {
-                System.out.println("map变换失败, source = " + s);
-                return s;
-            }
-        }).subscribe(value -> {
-            System.out.println("订阅 " + value);
-        });
-
-        RxBus.getInstance().post("888");
-        RxBus.getInstance().post("发发发");
-        RxBus.getInstance().unregister(String.class, observable);
-
-        /*
-        Subject
-         */
-        MySubject testSubject = new MySubject();
-        testSubject.testPublishSubject();
-
-        testSubject.testBehaviorSubject();
-
-        testSubject.testReplaySubject();
-
-        testSubject.testAsyncSubject();
-
-        testSubject.testUnicastSubject();
-
-        testSubject.testSerializedSubject();
-
-        /*
-        Math
-         */
-        MyMath testMath = new MyMath();
-        testMath.testAverage();
-
-        testMath.testMaxAndMin();
-
-        testMath.testSum();
+        test.testOnErrorReturn();
+//
+//        /*
+//        rxbus
+//         */
+//        Observable<String> observable = RxBus.getInstance().register(String.class);
+//        observable.map(s -> {
+//            try {
+//                int v = Integer.valueOf(s);
+//                System.out.println("map变换成功, source = " + s);
+//                return v;
+//            } catch (Exception e) {
+//                System.out.println("map变换失败, source = " + s);
+//                return s;
+//            }
+//        }).subscribe(value -> {
+//            System.out.println("订阅 " + value);
+//        });
+//
+//        RxBus.getInstance().post("888");
+//        RxBus.getInstance().post("发发发");
+//        RxBus.getInstance().unregister(String.class, observable);
+//
+//        /*
+//        Subject
+//         */
+//        MySubject testSubject = new MySubject();
+//        testSubject.testPublishSubject();
+//
+//        testSubject.testBehaviorSubject();
+//
+//        testSubject.testReplaySubject();
+//
+//        testSubject.testAsyncSubject();
+//
+//        testSubject.testUnicastSubject();
+//
+//        testSubject.testSerializedSubject();
+//
+//        /*
+//        Math
+//         */
+//        MyMath testMath = new MyMath();
+//        testMath.testAverage();
+//
+//        testMath.testMaxAndMin();
+//
+//        testMath.testSum();
     }
 }

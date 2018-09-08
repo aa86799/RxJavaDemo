@@ -12,10 +12,16 @@ import com.stone.rx2.rxjava.MyObservable;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.util.concurrent.TimeUnit;
+
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.FlowableOnSubscribe;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 /**
  * desc   :
@@ -166,5 +172,27 @@ public class RxJavaActivity extends Activity {
         //极限测试，产生1万个 Flowable对象，内存 增加10m 以内，  在小米2手机上
 //        startActivity(new Intent(this, SecondActi.class));
 
+        Observable.timer(500, TimeUnit.MILLISECONDS)
+                .subscribe(new Observer<Long>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(Long aLong) {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
     }
 }
