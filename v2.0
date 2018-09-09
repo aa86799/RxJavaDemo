@@ -56,6 +56,7 @@ public enum BackpressureStrategy {//背压策略
      */
     BUFFER,
     /**
+     * 如果下游无法保持，将 漏失 大部分最近的事件
      * Drops the most recent onNext value if the downstream can't keep up.
      */
     DROP,
@@ -117,3 +118,20 @@ onBackpressureDrop和onBackpressureLatest比较类似，都会丢弃数据。这
     下游通过request请求产生令牌（配额）给上游，上游接到多少令牌，就给下游发送多少数据。当令牌数消耗到0的时候，上游开始丢弃数据。
     但这两种策略在令牌数为0的时候有一点微妙的区别：onBackpressureDrop直接丢弃数据，不缓存任何数据；
     而onBackpressureLatest则缓存最新的一条数据，这样当上游接到新令牌的时候，它就先把缓存的上一条“最新”数据发送给下游
+
+
+RxJava 1 与 RxJava 2对比
+1. RxJava 2x 不再支持 null 值，如果传入一个null会抛出 NullPointerException
+2. Observable.just(null)（不支持）
+3. RxJava2 所有的函数接口(Function/Action/Consumer)均设计为可抛出Exception，自己去解决编译异常需要转换问题。
+4. RxJava1 中 Observable 不能很好支持背压，在RxJava2 中将 Observable 实现成不支持背压，而新增Flowable 来支持背压。
+
+Observable与Flowable如何选取
+什么时候用 Observable:
+    一般处理最大不超过1000条数据，并且几乎不会出现内存溢出
+    如果式 鼠标事件，频率不超过1000 Hz(即1000次/秒),基本上不会背压；
+
+什么时候用 Flowable:
+处理以某种方式产生超过10K的元素；
+文件读取与分析，例如 读取指定行数的请求；网络IO流;
+有很多的阻塞和/或 基于拉取的数据源，但是又想得到一个响应式非阻塞接口的。

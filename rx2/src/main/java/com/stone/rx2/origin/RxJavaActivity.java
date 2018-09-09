@@ -1,4 +1,4 @@
-package com.stone.rx2;
+package com.stone.rx2.origin;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -6,8 +6,8 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageView;
 
+import com.stone.rx2.R;
 import com.stone.rx2.rxbus.RxBus;
-import com.stone.rx2.rxjava.MyObservable;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -21,7 +21,6 @@ import io.reactivex.FlowableOnSubscribe;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 
 /**
  * desc   :

@@ -1,4 +1,4 @@
-package com.stone.rx2.rxjava;
+package com.stone.rx2.origin;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -11,7 +11,7 @@ import android.util.Log;
 import android.widget.ImageView;
 
 import com.stone.rx2.R;
-import com.stone.rx2.bean.Student;
+import com.stone.rx2.origin.bean.Student;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;

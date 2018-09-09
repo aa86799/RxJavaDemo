@@ -6,11 +6,11 @@
                  android:label="@string/app_name"
                  android:supportsRtl="true"
                  android:theme="@style/AppTheme">
-        <activity android:name=".RxJavaActivity">
-            <intent-filter>
-            <action android:name="android.intent.action.MAIN"/>
-            <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
+        <activity android:name=".origin.RxJavaActivity">
+            <!--<intent-filter>-->
+            <!--<action android:name="android.intent.action.MAIN"/>-->
+            <!--<category android:name="android.intent.category.LAUNCHER"/>-->
+            <!--</intent-filter>-->
         </activity>
         <activity android:name=".backpressure.BackPreActivity">
             <!--<intent-filter>-->
@@ -18,7 +18,23 @@
                 <!--<category android:name="android.intent.category.LAUNCHER"/>-->
             <!--</intent-filter>-->
         </activity>
-        <activity android:name=".SecondActi"/>
+        <activity android:name=".origin.SecondActi"/>
+
+        <!-- 新的 -->
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- 操作符 -->
+        <activity android:name=".op.OperatorActivity"/>
+        <activity android:name=".op.creator.CreatorActivity"/>
+        <activity android:name=".op.transformation.TransformationActivity"/>
+        <!-- 角色 -->
+        <activity android:name=".role.RoleActivity"/>
+
+
     </application>
 
 </manifest>

@@ -1,4 +1,4 @@
-package com.stone.rx2.bean;
+package com.stone.rx2.origin.bean;
 
 import java.util.List;
 
