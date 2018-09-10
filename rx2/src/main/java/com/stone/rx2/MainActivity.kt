@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.view.View
+import com.stone.rx2.my.MyRxJavaActivity
 import com.stone.rx2.op.OperatorActivity
 import com.stone.rx2.role.RoleActivity
 
@@ -29,5 +30,9 @@ class MainActivity : AppCompatActivity() {
 
     fun role(view: View) {
         startActivity(Intent(this, RoleActivity::class.java))
+    }
+
+    fun my(view: View) {
+        startActivity(Intent(this, MyRxJavaActivity::class.java))
     }
 }

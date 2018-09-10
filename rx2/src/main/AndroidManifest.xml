@@ -34,7 +34,8 @@
         <!-- 角色 -->
         <activity android:name=".role.RoleActivity"/>
 
-
+        <!-- 手写 RxJava 操作符 -->
+        <activity android:name=".my.MyRxJavaActivity"/>
     </application>
 
 </manifest>
