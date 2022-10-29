@@ -3,11 +3,10 @@ package com.stone.rx2.origin;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.Nullable;
-
 import com.stone.rx2.R;
 import com.stone.rx2.rxbus.RxBus;
 
+import androidx.annotation.Nullable;
 import io.reactivex.Flowable;
 
 /**

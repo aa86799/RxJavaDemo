@@ -2,11 +2,11 @@ package com.stone.rxandroid.backpressure;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.Nullable;
 import rx.Observable;
 import rx.Subscriber;
 import rx.schedulers.Schedulers;
@@ -19,7 +19,7 @@ import rx.schedulers.Schedulers;
  * email  : aa86799@163.com
  * time   : 25/04/2017 13 11
  */
-public class BackPreActi extends Activity {
+public class BackPreActivity extends Activity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

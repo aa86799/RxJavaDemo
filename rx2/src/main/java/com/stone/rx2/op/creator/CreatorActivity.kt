@@ -1,9 +1,6 @@
 package com.stone.rx2.op.creator
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
-import android.widget.TextView
-import com.stone.rx2.R
 import com.stone.rx2.SLog
 import com.stone.rx2.op.BaseOpActivity
 import io.reactivex.Observable

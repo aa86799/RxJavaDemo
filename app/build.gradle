@@ -1,19 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 33
     defaultConfig {
         applicationId "com.stone.rxandroid"
         minSdkVersion 14
-        targetSdkVersion 27
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
-//        jackOptions {//java8, 在新的studio2.4 preview中已自动支持  无需要配置其它了
-//            enabled true
-//        }
     }
     buildTypes {
         release {
@@ -32,10 +27,11 @@ dependencies {
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    testImplementation 'junit:junit:4.12'
-    //    compile 'io.reactivex.rxjava2:rxjava:2.0.1'
-    //    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
+    testImplementation 'junit:junit:4.13.2'
+
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'com.google.android.material:material:1.6.0'
+
     implementation 'io.reactivex:rxjava:+'
     implementation 'io.reactivex:rxandroid:+'
     implementation 'io.reactivex:rxjava-math:1.0.0'

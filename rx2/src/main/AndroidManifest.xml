@@ -6,13 +6,13 @@
                  android:label="@string/app_name"
                  android:supportsRtl="true"
                  android:theme="@style/AppTheme">
-        <activity android:name=".origin.RxJavaActivity">
+        <activity android:name=".origin.RxJavaActivity" android:exported="false">
             <!--<intent-filter>-->
             <!--<action android:name="android.intent.action.MAIN"/>-->
             <!--<category android:name="android.intent.category.LAUNCHER"/>-->
             <!--</intent-filter>-->
         </activity>
-        <activity android:name=".backpressure.BackPreActivity">
+        <activity android:name=".backpressure.BackPreActivity" android:exported="false">
             <!--<intent-filter>-->
                 <!--<action android:name="android.intent.action.MAIN"/>-->
                 <!--<category android:name="android.intent.category.LAUNCHER"/>-->
@@ -21,21 +21,21 @@
         <activity android:name=".origin.SecondActi"/>
 
         <!-- 新的 -->
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
         <!-- 操作符 -->
-        <activity android:name=".op.OperatorActivity"/>
-        <activity android:name=".op.creator.CreatorActivity"/>
-        <activity android:name=".op.transformation.TransformationActivity"/>
+        <activity android:name=".op.OperatorActivity" android:exported="false"/>
+        <activity android:name=".op.creator.CreatorActivity" android:exported="false"/>
+        <activity android:name=".op.transformation.TransformationActivity" android:exported="false"/>
         <!-- 角色 -->
-        <activity android:name=".role.RoleActivity"/>
+        <activity android:name=".role.RoleActivity" android:exported="false"/>
 
         <!-- 手写 RxJava 操作符 -->
-        <activity android:name=".my.MyRxJavaActivity"/>
+        <activity android:name=".my.MyRxJavaActivity" android:exported="false"/>
     </application>
 
 </manifest>

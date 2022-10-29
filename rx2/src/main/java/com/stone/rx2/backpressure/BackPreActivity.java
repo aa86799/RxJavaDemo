@@ -2,11 +2,11 @@ package com.stone.rx2.backpressure;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.Nullable;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
 

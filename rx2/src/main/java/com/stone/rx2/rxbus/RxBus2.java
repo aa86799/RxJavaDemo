@@ -1,11 +1,10 @@
 package com.stone.rx2.rxbus;
 
-import android.support.annotation.NonNull;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import androidx.annotation.NonNull;
 import io.reactivex.Flowable;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;

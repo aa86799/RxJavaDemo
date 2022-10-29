@@ -2,7 +2,7 @@ package com.stone.rx2.my
 
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.stone.rx2.SLog
 import com.stone.rx2.my.rxjava.Observable
 import com.stone.rx2.my.rxjava.ObservableOnSubscribe

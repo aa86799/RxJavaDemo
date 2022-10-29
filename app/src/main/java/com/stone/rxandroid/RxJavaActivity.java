@@ -1,13 +1,13 @@
 package com.stone.rxandroid;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.ImageView;
 
 import com.stone.rxandroid.rxjava.MyObservable;
 
 
+import androidx.appcompat.app.AppCompatActivity;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;

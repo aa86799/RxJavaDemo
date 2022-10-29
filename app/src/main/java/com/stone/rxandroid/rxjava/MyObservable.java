@@ -4,8 +4,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.DrawableRes;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.ImageView;
 
@@ -19,6 +17,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.DrawableRes;
+import androidx.core.content.ContextCompat;
 import rx.Observable;
 import rx.Observer;
 import rx.Single;

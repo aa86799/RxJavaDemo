@@ -1,7 +1,7 @@
 package com.stone.rx2.role
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 
 /**
  * desc     :
